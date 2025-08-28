@@ -1,13 +1,17 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { useState } from 'react';
 import { Button, ScrollView, StyleSheet, Text, View, Pressable, Alert, Image, TextInput } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import * as ImagePicker from 'expo-image-picker';
 import { Picker } from '@react-native-picker/picker';
+import { ALERT_TYPE, Dialog, AlertNotificationRoot, Toast } from 'react-native-alert-notification';
+import { get } from 'react-native/Libraries/TurboModule/TurboModuleRegistry';
 
 export default function SignUpScreen() {
 
-  const [image, setImage] = useState<string | null>(null);
+  const HOMEPATH = 'https://fda1f8502192.ngrok-free.app';
+
+  const [getImage, setImage] = useState<string | null>(null);
 
   const pickImage = async () => {
     // No permissions request is necessary for launching the image library
@@ -25,74 +29,163 @@ export default function SignUpScreen() {
     }
   };
 
+  const [getCity, setCity] = useState<{ id: number; name: string }[]>([]);
+
+  useEffect(() => {
+    const loadCities = async () => {
+      try {
+        const response = await fetch(HOMEPATH + "/NoteBook/Cities");
+        if (response.ok) {
+          const json = await response.json();
+          console.log(json);
+          setCity(json);
+        } else {
+          console.log("City Not found");
+        }
+      } catch (error) {
+        console.error("Error loading cities:", error);
+      }
+    };
+
+    loadCities();
+  }, []);
+
+  const [getFullName, setFullName] = useState('');
+  const [getEmail, setEmail] = useState('');
+  const [getPassword, setPassword] = useState('');
+  const [getComfirmPassword, setComfirmPassword] = useState('');
   const [selectedCity, setSelectedCity] = useState('');
-  const cities = ["Anuradhapura", "Kurunagala", "Kandy", "Colombo", "Galle"];
-
-
+  // image methos at the top (11 line)
   return (
+
 
     <SafeAreaView style={styles.container}>
       <ScrollView contentContainerStyle={styles.scollcontent}>
-        <View style={styles.header}>
-          <Text style={styles.pageTitle}>Create Account</Text>
-          <Text style={styles.subTitle}>Fill in the infromation below to create your account.</Text>
-        </View>
-        <View style={styles.form}>
-          <Pressable onPress={pickImage} style={styles.ImageUploader}>
-            {image ? (<Image source={{ uri: image }} style={styles.profileImage} />
-            ) : (
-              <View style={styles.imagePlaceholder}>
-                <Text style={styles.imageText}>+</Text>
-                <Text style={styles.imageLabal}>Add Image</Text>
-              </View>
-            )}
-          </Pressable>
-        </View>
-
-        <View style={styles.inputContainer}>
-          <Text style={styles.labal}>Full Name</Text>
-          <TextInput placeholder='your full name here' style={styles.input} />
-
-          <Text style={styles.labal}>Email</Text>
-          <TextInput placeholder='Email' style={styles.input} />
-
-          <Text style={styles.labal}>Password</Text>
-          <TextInput placeholder='Password' secureTextEntry style={styles.input} />
-
-          <Text style={styles.labal}>Comfirm Password</Text>
-          <TextInput placeholder='Comfirm Password' secureTextEntry style={styles.input} />
+        <AlertNotificationRoot>
+          <View style={styles.header}>
+            <Text style={styles.pageTitle}>Create Account</Text>
+            <Text style={styles.subTitle}>Fill in the infromation below to create your account.</Text>
+          </View>
+          <View style={styles.form}>
+            <Pressable onPress={pickImage} style={styles.ImageUploader}>
+              {getImage ? (<Image source={{ uri: getImage }} style={styles.profileImage} />
+              ) : (
+                <View style={styles.imagePlaceholder}>
+                  <Text style={styles.imageText}>+</Text>
+                  <Text style={styles.imageLabal}>Add Image</Text>
+                </View>
+              )}
+            </Pressable>
+          </View>
 
           <View style={styles.inputContainer}>
-            <Text style={styles.labal}>City</Text>
-            <View style={styles.pickerContainer}>
-              <Picker
-                selectedValue={selectedCity}
-                onValueChange={(itemValue) =>
-                  setSelectedCity(itemValue)
-                }>
-                <Picker.Item label="Select your city" value={''} />
-                {cities.map((city, index) => (
-                  <Picker.Item key={index} label={city} value={city} />
-                ))}
-              </Picker>
+            <Text style={styles.labal}>Full Name</Text>
+            <TextInput placeholder='your full name here' style={styles.input} onChangeText={setFullName} value={getFullName} />
+
+            <Text style={styles.labal}>Email</Text>
+            <TextInput placeholder='Email' style={styles.input} onChangeText={setEmail} value={getEmail} />
+
+            <Text style={styles.labal}>Password</Text>
+            <TextInput placeholder='Password' secureTextEntry style={styles.input} onChangeText={setPassword} value={getPassword} />
+
+            <Text style={styles.labal}>Comfirm Password</Text>
+            <TextInput placeholder='Comfirm Password' secureTextEntry style={styles.input} onChangeText={setComfirmPassword} value={getComfirmPassword} />
+
+            <View style={styles.inputContainer}>
+              <Text style={styles.labal}>City</Text>
+              <View style={styles.pickerContainer}>
+                <Picker
+                  selectedValue={selectedCity}
+                  onValueChange={(itemValue) =>
+                    setSelectedCity(itemValue)
+                  }>
+                  <Picker.Item label="Select your city" value={''} />
+                  {getCity.map((city) => (
+                    <Picker.Item key={city.id} label={city.name} value={city.id} />
+                  ))}
+                </Picker>
+              </View>
             </View>
           </View>
-        </View>
 
-        <View style={styles.buttonContainer}>
-          <Pressable style={styles.backButton} onPress={() => Alert.alert('Back button pressed')}>
-            <Text style={styles.backButtonText}>Go Back</Text>
-          </Pressable>
+          <View style={styles.buttonContainer}>
+            <Pressable style={styles.backButton} onPress={() => Dialog.show({
+              type: ALERT_TYPE.SUCCESS,
+              title: 'Success',
+              textBody: 'Congrats! this is dialog box success',
+              button: 'close',
+            })}>
+              <Text style={styles.backButtonText}>Go Back</Text>
+            </Pressable>
 
-          <Pressable style={styles.saveButton} onPress={() => Alert.alert('Account created successfully!')}>
-            <Text style={styles.saveButtonText}>Create Account</Text>
-          </Pressable>
-        </View>
+            <Pressable style={styles.saveButton} onPress={async () => {
 
+              if (!getFullName || !getEmail || !getPassword || !getComfirmPassword || !selectedCity || getImage === null) {
+                Dialog.show({
+                  type: ALERT_TYPE.WARNING,
+                  title: 'WARNING',
+                  textBody: 'All fields are required including image',
+                  button: 'close',
+                })
+                return;
+              }
+
+              let formData = new FormData();
+              formData.append('fullName', getFullName);
+              formData.append('email', getEmail);
+              formData.append('password', getPassword);
+              formData.append('comfirmPassword', getComfirmPassword);
+              formData.append('cityId', selectedCity);
+              if (getImage) {
+                formData.append('profileImage', {
+                  uri: getImage,
+                  name: 'profile.jpg',
+                  type: 'image/jpeg'
+                } as any);
+              }
+              try {
+                const response = await fetch(HOMEPATH + '/NoteBook/SignUp', {
+                  method: 'POST',
+                  body: formData,
+                  headers: {
+                    'Content-Type': 'multipart/form-data',
+                  },
+                });
+
+                if (response.ok) {
+                  console.log('Success');
+                  Dialog.show({
+                    type: ALERT_TYPE.SUCCESS,
+                    title: 'Success',
+                    textBody: 'Your account has been created successfully!',
+                    button: 'close',
+                  });
+                } else {
+                  console.error('Server Error');
+                  Dialog.show({
+                    type: ALERT_TYPE.DANGER,
+                    title: 'Error',
+                    textBody: `something went wrong. Please try again later.`,
+                    button: 'close',
+                  });
+                }
+              } catch (error) {
+                Dialog.show({
+                  type: ALERT_TYPE.DANGER,
+                  title: 'Error',
+                  textBody: `Something went wrong. Please try again later.`,
+                  button: 'close',
+                });
+                console.log('Network Error:', error);
+              }
+
+            }}>
+              <Text style={styles.saveButtonText}>Create Account</Text>
+            </Pressable>
+          </View>
+        </AlertNotificationRoot>
       </ScrollView>
     </SafeAreaView>
-
-
   );
 }
 
